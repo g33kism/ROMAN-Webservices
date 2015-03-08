@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   width="434" height="184">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				StartupSettings.host = txthostname.text;
+				var objroman :Roman = new Roman();
+				PopUpManager.addPopUp(objroman,this);
+			}
+		]]> 
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Form x="55" y="22" width="312">
+		<s:FormItem label="Server Name:">
+			<s:TextInput id="txthostname" width="147" text="localhost"/>
+		</s:FormItem>
+	</s:Form>
+	<s:Button x="178" y="114" label="Submit" click="button1_clickHandler(event)"/>
+</s:WindowedApplication>

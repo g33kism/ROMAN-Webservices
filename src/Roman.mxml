@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					  
+					   width="1066" height="662" creationComplete="this.maximize()">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.collections.ArrayList;
+			import mx.controls.Alert;
+			import mx.events.FileEvent;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ListEvent;
+			import mx.graphics.codec.JPEGEncoder;
+			import mx.utils.ArrayUtil;
+			import mx.utils.Base64Decoder;
+			import mx.utils.Base64Encoder;
+			
+			import org.osmf.elements.ImageLoader;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.primitives.BitmapImage;
+			[Bindable]
+			private var filetypes:Array=new Array(".jpg",".jpeg");
+			
+		
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				newItem(txtName.text,txtDes.text, ddlCategory.selectedItem,ddlCuisine.selectedItem,nsPrice.value);	
+				button2_clickHandler(event);
+				dropDownList_creationCompleteHandler(new FlexEvent("change"));	
+			}
+			protected function update_clickHandler(event:MouseEvent):void
+			{
+				updItem(ddlItemNames.selectedItem,txtDesc.text, ddlCategoryMod.selectedItem,ddlCuisineMod.selectedItem,int(txtpriceMod.text));	
+				button2_clickHandler(event);
+			}
+			protected function newItem(name:String, desc:String,category:String, cuisine:String, price:Number):void
+			{
+				var encoder:Base64Encoder=new Base64Encoder();
+				encoder.encodeBytes(new JPEGEncoder(75).encode(imgcon.bitmapData));
+				var pic:String=encoder.toString();
+				//Alert.show(pic);
+				Alert.show("Item Added");
+				MenuItem.newMenuItem(name,desc, category, cuisine, price, pic);
+			}
+			protected function updItem(name:String, desc:String,category:String, cuisine:String, price:int):void
+			{
+				var encoder:Base64Encoder=new Base64Encoder();
+				encoder.encodeBytes(new JPEGEncoder(75).encode(imgconMod.bitmapData));
+				MenuItem.updateMenuItem(name,name, desc,category, cuisine, price,encoder.toString());
+				Alert.show("Item Updated");
+				
+			}
+			private var catArr:Array= new Array("Appetizers","Main Course","Roti","Deserts","Drinks");
+			[Bindable]	
+			private var cat:ArrayCollection = new ArrayCollection(catArr);
+			private var cuiArr:Array= new Array("Indian","Chinese","Italian","Mexican","Thai");
+			[Bindable]	
+			private var cui:ArrayCollection = new ArrayCollection(cuiArr);
+		
+			protected function fs_fileChooseHandler(event:FileEvent):void
+			{
+				var file:String;
+				file=fs.selectedPath
+				imgcon.source=file
+				
+			}
+			protected function fsMod_fileChooseHandler(event:FileEvent):void
+			{
+				var file:String;
+				file=fsMod.selectedPath
+				imgconMod.source=file
+				
+			}
+			
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				 txtName.text="";
+				 txtDes.text="";
+				 ddlCategory.selectedIndex=-1;
+				 ddlCuisine.selectedIndex=-1;
+				 nsPrice.value=1000;
+				 imgcon.source=null;
+				
+				 
+			}
+			protected function dropDownList_creationCompleteHandler(event:FlexEvent):void
+			{
+				getMenuItemNamesResult.token = MenuItem.getMenuItemNames()
+			}
+
+			
+			protected function ddlItemNames_changeHandler(event:IndexChangeEvent):void
+			{
+				getMenuItemDetailsResult.token=MenuItem.getMenuItemByName(ddlItemNames.selectedItem.toString());
+			}
+			private function getItems():void
+			{
+				try
+				{
+				var temp2:ArrayCollection= new ArrayCollection();
+				temp2=getMenuItemDetailsResult.lastResult as ArrayCollection;
+				txtDesc.text=temp2.getItemAt(2).toString();
+				ddlCategoryMod.selectedItem=temp2.getItemAt(3);
+				ddlCuisineMod.selectedItem=temp2.getItemAt(4);
+				var num:Number= new Number(temp2.getItemAt(5).toString());
+				txtpriceMod.text=num+"";
+				
+				var encodedBytes:String = temp2.getItemAt(6).toString();
+				var baseDecoder:Base64Decoder = new Base64Decoder();
+				baseDecoder.decode(encodedBytes);
+				var byteArray:ByteArray = baseDecoder.toByteArray();
+				imgconMod.source=byteArray;
+				}
+				catch(e:Error)
+				{
+				}
+			}
+			
+			protected function btnClr_clickHandler(event:MouseEvent):void
+			{
+				ddlItemNames.selectedIndex=-1;
+				txtDesc.text="";
+				ddlCategoryMod.selectedIndex=-1;
+				ddlCuisineMod.selectedIndex=-1;
+				txtpriceMod.text=1000+"";
+				imgconMod.source=null;
+			}
+			
+			protected function btnDel_clickHandler(event:MouseEvent):void
+			{
+				MenuItem.deleteMenuItem(ddlItemNames.selectedItem.toString());
+				ddlItemNames.dataProvider.removeItemAt(ddlItemNames.selectedIndex);
+				ddlItemNames.selectedIndex=-1
+				txtDesc.text="";
+				ddlCategoryMod.selectedIndex=-1;
+				ddlCuisineMod.selectedIndex=-1;
+				txtpriceMod.text=1000+"";
+				imgconMod.source=null;
+				
+			}
+			
+			protected function accordion1_changeHandler(event:IndexChangedEvent):void
+			{
+				getMenuItemNamesResult.token = MenuItem.getMenuItemNames();
+			}	
+			
+			
+		]]>
+	</fx:Script>
+		
+	<fx:Declarations>
+		<s:WebService id="MenuItem" wsdl="http://{StartupSettings.host}:8080/roman/MenuItemService?wsdl"  />
+		<s:CallResponder id="getMenuItemNamesResult"/>
+		<s:CallResponder id="getMenuItemDetailsResult"  result="getItems()"/>
+	</fx:Declarations>
+	<mx:Accordion x="154" y="21" width="800" height="632" change="accordion1_changeHandler(event)">
+		<s:NavigatorContent width="100%" height="100%" label="Add New Menu Item">
+			<s:Form x="23" y="10" width="627" height="442">
+				<s:FormItem width="371" label="Item Name:">
+					<s:TextInput width="277" id="txtName"/>
+				</s:FormItem>
+				<s:FormItem label="Description:">
+					<s:TextArea id="txtDes" width="276" height="77"/>
+				</s:FormItem>
+				<s:FormItem width="370" label="Category:">
+					<s:DropDownList width="278" id="ddlCategory" dataProvider="{cat}" ></s:DropDownList>
+				</s:FormItem>
+				<s:FormItem width="371" label="Cuisine:">
+					<s:DropDownList width="275" id="ddlCuisine" dataProvider="{cui}"></s:DropDownList>
+				</s:FormItem>
+				<s:FormItem label="Price:">
+					<s:NumericStepper id="nsPrice" maximum="10000" minimum="1.0" stepSize="0.5" value="1000"/>
+				</s:FormItem>
+				
+				<s:FormItem width="596" height="202" label="Select Image">
+					<s:layout>
+						<s:BasicLayout/>
+					</s:layout>
+					<s:Image id="imgcon" x="305" y="6" width="175" height="150" scaleMode="letterbox"/>
+					<mx:FileSystemTree id="fs" x="10" y="0" width="264" height="156"
+									   fileChoose="fs_fileChooseHandler(event)"
+									   filters="{filetypes}" showExtensions="true"
+									   showHidden="false" showIcons="true"/>
+				</s:FormItem>
+			</s:Form>
+			<s:Button x="244" y="515" label="Add" click="button1_clickHandler(event)"/>
+			<s:Button x="428" y="515" label="Clear" click="button2_clickHandler(event)"/>
+		</s:NavigatorContent>
+		
+		<s:NavigatorContent width="100%" height="100%" label="Update Menu Item">
+			<s:Form x="10" y="10" width="757" height="429">
+				<s:FormItem width="400" label="Item Name:">
+					<s:DropDownList id="ddlItemNames" width="275"
+									change="ddlItemNames_changeHandler(event)"
+									creationComplete="dropDownList_creationCompleteHandler(event)">
+						<s:AsyncListView list="{getMenuItemNamesResult.lastResult}"/>
+							
+					</s:DropDownList>
+				</s:FormItem>
+				<s:FormItem label="Description:">
+					<s:TextArea id="txtDesc" width="276" height="77"/>
+				</s:FormItem>
+				<s:FormItem width="400" label="Category:">
+					<s:DropDownList width="278" id="ddlCategoryMod" dataProvider="{cat}" ></s:DropDownList>
+				</s:FormItem>
+				<s:FormItem width="400" label="Cuisine:">
+					<s:DropDownList width="275" id="ddlCuisineMod" dataProvider="{cui}"></s:DropDownList>
+				</s:FormItem>
+				<s:FormItem width="401" label="Price:">
+					<s:TextInput id="txtpriceMod"/>
+				</s:FormItem>
+				
+				<s:FormItem width="702" height="202" label="Select Image">
+					<s:layout>
+						<s:BasicLayout/>
+					</s:layout>
+					<s:Image id="imgconMod" x="305" y="6" width="176" height="150" scaleMode="letterbox"/>
+					<mx:FileSystemTree id="fsMod" x="10" y="0" width="264" height="156"
+									   fileChoose="fsMod_fileChooseHandler(event)"
+									   filters="{filetypes}" showExtensions="true"
+									   showHidden="true" showIcons="true"/>
+				</s:FormItem>
+			</s:Form>
+			<s:Button id="btnUpd" x="235" y="507" label="Update" click="update_clickHandler(event)"/>
+			<s:Button id="btnClr" x="423" y="505" label="Clear" click="btnClr_clickHandler(event)"/>
+			<s:Button id="btnDel" x="328" y="505" label="Delete" click="btnDel_clickHandler(event)"/>
+		</s:NavigatorContent>
+	</mx:Accordion>
+</s:WindowedApplication>
